@@ -1,0 +1,29 @@
+name: Deploy Medusa App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Medusa on EC2 using Github actions
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up SSH key
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@44.204.188.78 << 'EOF'
+          cd ~/medusa-app
+          git pull origin main
+          npm install
+          pm2 restart medusa-app || pm2 start npm --name "medusa-app" -- run start
+        EOF
